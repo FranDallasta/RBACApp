@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Configure services
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new InvalidOperationException("La cadena de conexión no está configurada.")));
+    options.UseSqlServer(Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new InvalidOperationException("The connection string is not set.")));
 
 builder.Services.AddAuthentication(options =>
 {
@@ -32,7 +32,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "YourIssuer",
         ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "YourAudience",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("La clave secreta JWT no está configurada.")))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT secret key is not set.")))
     };
 
     // Setting up JwtBearer events
@@ -119,7 +119,7 @@ app.MapPost("/login", async (AppDbContext dbContext, LoginRequest loginRequest) 
         new Claim(ClaimTypes.Role, user.Role.ToString())
     };
 
-    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("La clave secreta JWT no está configurada.")));
+    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT secret key is not set.")));
     var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
     var token = new JwtSecurityToken(
         issuer: Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "YourIssuer",
@@ -134,11 +134,11 @@ app.MapPost("/login", async (AppDbContext dbContext, LoginRequest loginRequest) 
 });
 
 // Endpoint for administrators only
-app.MapGet("/secure/admin-panel", () => "Este es el panel de administración.")
+app.MapGet("/secure/admin-panel", () => "This is the admin panel.")
     .RequireAuthorization("AdminOnly");
 
 // Endpoint for users only
-app.MapGet("/secure/user-profile", () => "Este es el perfil de usuario.")
+app.MapGet("/secure/user-profile", () => "This is the user panel.")
     .RequireAuthorization("UserOnly");
 
 app.Run();
