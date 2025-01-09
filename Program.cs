@@ -1,144 +1,132 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using RBACApp.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using DotNetEnv;
-using RBACApp.Data;
 using RBACApp.Models;
-using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
-
-// Load environment variables
-Env.Load();
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure services
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? throw new InvalidOperationException("The connection string is not set.")));
+// Load environment variables
+DotNetEnv.Env.Load();
 
-builder.Services.AddAuthentication(options =>
+// Configure JWT settings with error handling for missing environment variables
+var jwtSettings = new JwtSettings
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "YourIssuer",
-        ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "YourAudience",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT secret key is not set.")))
-    };
+    Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
+        ?? throw new InvalidOperationException("JWT_ISSUER environment variable is not set."),
+    Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+        ?? throw new InvalidOperationException("JWT_AUDIENCE environment variable is not set."),
+    SecretKey = Environment.GetEnvironmentVariable("JWT_KEY")
+        ?? throw new InvalidOperationException("JWT_KEY environment variable is not set."),
+    ExpirationInMinutes = int.TryParse(Environment.GetEnvironmentVariable("JWT_EXPIRATION_MINUTES"), out var expiration)
+        ? expiration
+        : throw new InvalidOperationException("JWT_EXPIRATION_MINUTES environment variable is not valid.")
+};
 
-    // Setting up JwtBearer events
-    options.Events = new JwtBearerEvents
+// Add JWT authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
-        OnMessageReceived = context =>
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-            if (!string.IsNullOrEmpty(token))
-            {
-                Console.WriteLine($"Token received: {token}");
-            }
-            else
-            {
-                Console.WriteLine("No token was received in the request.");
-            }
-            return Task.CompletedTask;
-        },
-        OnAuthenticationFailed = context =>
-        {
-            Console.WriteLine($"Authentication failed: {context.Exception.Message}");
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            Console.WriteLine($"Token validated for the user: {context.Principal?.Identity?.Name}");
-            return Task.CompletedTask;
-        },
-        OnChallenge = context =>
-        {
-            Console.WriteLine("An authentication challenge has been initiated.");
-            return Task.CompletedTask;
-        }
-    };
-});
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 
+// Register authorization services
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
     options.AddPolicy("UserOnly", policy => policy.RequireRole("User"));
 });
 
+// Configure Entity Framework and database context
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(Environment.GetEnvironmentVariable("CONNECTION_STRING")
+        ?? throw new InvalidOperationException("CONNECTION_STRING environment variable is not set.")));
+
 var app = builder.Build();
 
-// Seeding the database
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.EnsureCreated();
-
-    if (!dbContext.Users.Any())
-    {
-        dbContext.Users.AddRange(
-            new User
-            {
-                Username = "admin",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                Role = Roles.Admin
-            },
-            new User
-            {
-                Username = "user",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("user123"),
-                Role = Roles.User
-            });
-        dbContext.SaveChanges();
-    }
-}
-
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-
-// Login Endpoint
-app.MapPost("/login", async (AppDbContext dbContext, LoginRequest loginRequest) =>
+// Helper function to hash passwords with SHA256
+string HashPassword(string password, string secretKey)
 {
-    var user = await dbContext.Users.SingleOrDefaultAsync(u => u.Username == loginRequest.Username);
-    if (user == null || !BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.PasswordHash))
-        return Results.Unauthorized();
+    using var sha256 = SHA256.Create();
+    var combined = Encoding.UTF8.GetBytes(password + secretKey);
+    var hash = sha256.ComputeHash(combined);
+    return Convert.ToBase64String(hash);
+}
 
-    var claims = new[]
+// Register endpoint
+app.MapPost("/register", async (RegisterRequest request, AppDbContext dbContext) =>
+{
+    if (await dbContext.Users.AnyAsync(u => u.Username == request.Username))
     {
-        new Claim(ClaimTypes.Name, user.Username),
-        new Claim(ClaimTypes.Role, user.Role.ToString())
+        return Results.BadRequest(new { Error = "Username already exists." });
+    }
+
+    var hashedPassword = HashPassword(request.Password, jwtSettings.SecretKey);
+
+    var user = new User
+    {
+        Username = request.Username,
+        PasswordHash = hashedPassword,
+        Role = request.Role
     };
+    dbContext.Users.Add(user);
+    await dbContext.SaveChangesAsync();
 
-    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT secret key is not set.")));
-    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-    var token = new JwtSecurityToken(
-        issuer: Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "YourIssuer",
-        audience: Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "YourAudience",
-        claims: claims,
-        expires: DateTime.Now.AddHours(1),
-        signingCredentials: creds);
-
-    
-
-    return Results.Ok(new { Token = new JwtSecurityTokenHandler().WriteToken(token) });
+    return Results.Ok("User registered successfully.");
 });
 
-// Endpoint for administrators only
-app.MapGet("/secure/admin-panel", () => "This is the admin panel.")
+// Login endpoint
+app.MapPost("/login", async (LoginRequest request, AppDbContext dbContext) =>
+{
+    var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
+    if (user == null) return Results.Unauthorized();
+
+    var hashedPassword = HashPassword(request.Password, jwtSettings.SecretKey);
+    if (user.PasswordHash != hashedPassword) return Results.Unauthorized();
+
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
+    var tokenDescriptor = new SecurityTokenDescriptor
+    {
+        Subject = new System.Security.Claims.ClaimsIdentity(new[]
+        {
+            new System.Security.Claims.Claim("id", user.Id.ToString()),
+            new System.Security.Claims.Claim("username", user.Username),
+            new System.Security.Claims.Claim("role", user.Role)
+        }),
+        Expires = DateTime.UtcNow.AddMinutes(jwtSettings.ExpirationInMinutes),
+        Issuer = jwtSettings.Issuer,
+        Audience = jwtSettings.Audience,
+        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+    };
+
+    var accessToken = tokenHandler.CreateToken(tokenDescriptor);
+    return Results.Ok(new { Token = tokenHandler.WriteToken(accessToken) });
+});
+
+// Admin-only endpoint
+app.MapGet("/secure/admin-panel", () => Results.Ok("This is the admin panel."))
     .RequireAuthorization("AdminOnly");
 
-// Endpoint for users only
-app.MapGet("/secure/user-profile", () => "This is the user panel.")
+// User-only endpoint
+app.MapGet("/secure/user-profile", () => Results.Ok("This is the user profile."))
     .RequireAuthorization("UserOnly");
 
 app.Run();

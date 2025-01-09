@@ -31,10 +31,15 @@ C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Mic
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Microsoft.OpenApi.dll
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Microsoft.SqlServer.Server.dll
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Microsoft.Win32.SystemEvents.dll
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Mono.TextTemplating.dll
+C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Newtonsoft.Json.dll
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Sprache.dll
+C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\System.CodeDom.dll
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\System.Composition.AttributedModel.dll
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\bin\Debug\net8.0\System.Composition.Convention.dll
@@ -118,7 +123,9 @@ C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\obj\Debug\net8.0\RBA
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\obj\Debug\net8.0\RBACApp.AssemblyInfoInputs.cache
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\obj\Debug\net8.0\RBACApp.AssemblyInfo.cs
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\obj\Debug\net8.0\RBACApp.csproj.CoreCompileInputs.cache
+C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\obj\Debug\net8.0\RBACApp.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\obj\Debug\net8.0\RBACApp.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\obj\Debug\net8.0\RBACApp.sourcelink.json
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\obj\Debug\net8.0\staticwebassets.build.json
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\Franco\Documents\Aptly\Labs\FE.C6.M2.L4.A2\RBACApp\obj\Debug\net8.0\staticwebassets\msbuild.RBACApp.Microsoft.AspNetCore.StaticWebAssets.props
