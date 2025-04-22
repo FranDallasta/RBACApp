@@ -1,0 +1,29 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+# Checkout the repository
+- task: Checkout@1
+
+# Set up Node.js
+- task: UseNode@1
+  inputs:
+    version: '16.x'
+
+# Install dependencies
+- script: npm install
+  displayName: 'Install dependencies'
+
+# Run tests
+- script: npm test
+  displayName: 'Run tests'
+
+# Deploy the application
+- script: |
+    echo "Deploying application..."
+    # Add your deployment commands here
+  displayName: 'Deploy application'
+  condition: succeeded()
