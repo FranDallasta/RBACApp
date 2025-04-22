@@ -1,0 +1,12 @@
+{
+  "name": "rbacapp",
+  "version": "1.0.0",
+  "description": "This app has an issue. The POST endpoints can create valid JWTs—I checked them on https://jwt.io/ and  confirmed that the payload had the appropriate structure, an unexpired exp, and a valid signature.  However, when using these JWTs with the GET endpoints that simulate accessing user and admin resources,  I receive a 401 error.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
